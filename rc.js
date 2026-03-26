@@ -2,8 +2,11 @@ var minimist = require('minimist')
 var targets = require('node-abi').supportedTargets
 var detectLibc = require('detect-libc')
 var napi = require('napi-build-utils')
+var os = require('os')
+var osType = os.type()
+var libcVer = osType.startsWith('MINGW32_NT') ? 'gnu' : ''
 
-var libc = process.env.LIBC || (detectLibc.isNonGlibcLinuxSync() && detectLibc.familySync()) || ''
+var libc = process.env.LIBC || (detectLibc.isNonGlibcLinuxSync() && detectLibc.familySync()) || libcVer
 
 var rc = require('rc')('prebuild', {
   target: process.versions.node,

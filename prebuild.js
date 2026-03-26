@@ -23,8 +23,9 @@ function prebuild (opts, target, runtime, callback) {
   buildLog(buildLogMessage)
 
   // --target can be target or abi
-  if (!napi.isNapiRuntime(runtime)) target = getTarget(target, runtime)
-  var abi = getAbi(target, runtime)
+  var isNapi = napi.isNapiRuntime(runtime)
+  if (!isNapi) target = getTarget(target, runtime)
+  var abi = isNapi ? String(target) : getAbi(target, runtime)
 
   var tarPath = getTarPath(opts, abi)
   fs.stat(tarPath, function (err, st) {

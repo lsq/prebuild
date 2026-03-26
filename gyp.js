@@ -9,10 +9,11 @@ var backends = {
 }
 
 // Use system installed node-gyp for other JS engines
+var osType = os.type()
 var jsEngine = process.jsEngine || 'v8'
-if (jsEngine !== 'v8') {
+if (jsEngine !== 'v8' || osType.startsWith('MINGW32_NT')) {
   backends['node-gyp'] = require(path.join(
-    path.dirname(process.execPath), 'node_modules/npm/node_modules/node-gyp'))()
+    path.dirname(process.execPath), '../lib/node_modules/npm/node_modules/node-gyp'))()
 }
 
 function runGyp (opts, cb) {

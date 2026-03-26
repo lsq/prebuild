@@ -1,11 +1,12 @@
-name: CI
+name: test-release-publish
 
 on:
   - push
   - pull_request
+  - workflow_dispatch
 
-permissions:
-  contents: read
+# permissions:
+  # contents: read
 
 jobs:
   build:
@@ -13,37 +14,93 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 18, 16]
-        os: [windows-2019, macos-11, ubuntu-22.04]
+        node: [24, 22, 20]
+        # os: [windows-latest, macos-11, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
         arch: [x64]
         include:
-          - os: windows-2019
+          - os: windows-latest
+            arch: mingw
+          - os: windows-latest
+            arch: x86
+            node: 22
+          - os: windows-latest
             arch: x86
             node: 20
-          - os: windows-2019
-            arch: x86
-            node: "18.18.2" # pinned to avoid 18.19.0 and npm 10
-          - os: windows-2019
-            arch: x86
-            node: 16
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: msys2/setup-msys2@v2
+        if: matrix.arch == 'mingw'
         with:
-          python-version: "3.11"
+          msystem: UCRT64
+          install: jq base-devel binutils git mingw-w64-ucrt-x86_64-toolchain
+          pacboy: >-
+            ca-certificates
+            yarn:p
+            python:p
+          update: true
+          path-type: inherit
+          #location: C:\
+          release: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        if: matrix.arch != 'mingw'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
       - name: Use Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        if: matrix.arch != 'mingw'
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.arch }}
+      - name: Install (msys2)
+        shell: msys2 {0}
+        if: matrix.arch == 'mingw'
+        run: |
+          which npm
+          npm install
+          npm test
+          npm pack
+          latest_version_published=$(sed -n 's/^\s\+\"version\": \"\(.*\)\",$/\1/p' package.json)
+          echo "tagName=${latest_version_published}" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install
+        if: matrix.arch != 'mingw'
         run: npm install
         env:
-          npm_config_arch: ${{ matrix.arch }}
           TARGET_ARCH: ${{ matrix.arch }}
       - name: Test
+        if: matrix.arch != 'mingw'
         run: npm test
+      - name: Upload to Release
+        if: ${{ env.tagName != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./*.tgz
+          tag_name: ${{ env.tagName }}
+          name: ${{ env.tagName }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish
+        if: ${{ startsWith(github.ref_name, 'v') && env.tagName != '' }}
+        run: |
+          if git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          then
+            echo "Publishing regular release"
+            npm publish --access public
+          elif git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+$";
+          then
+            echo "Publishing beta release"
+            npm publish --tag beta --access public
+          else
+            echo "Not a release, skipping publish"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

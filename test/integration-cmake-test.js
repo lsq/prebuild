@@ -4,10 +4,11 @@ var path = require('path')
 var fs = require('fs')
 
 var cwd = path.join(__dirname, 'native-module-cmake')
+var osType = require('os').type()
 
 test('can prebuild a cmake-js native module for node', function (t) {
   fs.rmSync(path.join(cwd, 'prebuilds'), { recursive: true, force: true })
-  var file = 'native-v1.0.0-node-v57-' + process.platform + '-' + process.arch + '.tar.gz'
+  var file = 'native-v1.0.0-node-v57-' + process.platform + (osType.startsWith('MINGW32_NT') ? 'gnu' : '') + '-' + process.arch + '.tar.gz'
   var prebuild = path.join(cwd, 'prebuilds', file)
   exec('npm run prebuild', { cwd: cwd }, function (error, stdout, stderr) {
     t.equal(error, null)
@@ -18,7 +19,7 @@ test('can prebuild a cmake-js native module for node', function (t) {
 
 test('can prebuild a cmake-js native module for electron', function (t) {
   fs.rmSync(path.join(cwd, 'prebuilds'), { recursive: true, force: true })
-  var file = 'native-v1.0.0-electron-v50-' + process.platform + '-' + process.arch + '.tar.gz'
+  var file = 'native-v1.0.0-electron-v50-' + process.platform + (osType.startsWith('MINGW32_NT') ? 'gnu' : '') + '-' + process.arch + '.tar.gz'
   var prebuild = path.join(cwd, 'prebuilds', file)
   exec('npm run prebuild-electron', { cwd: cwd }, function (error, stdout, stderr) {
     t.equal(error, null)
@@ -29,7 +30,7 @@ test('can prebuild a cmake-js native module for electron', function (t) {
 
 test('can prebuild a cmake-js native module for node with silent argument', function (t) {
   fs.rmSync(path.join(cwd, 'prebuilds'), { recursive: true, force: true })
-  var file = 'native-v1.0.0-node-v57-' + process.platform + '-' + process.arch + '.tar.gz'
+  var file = 'native-v1.0.0-node-v57-' + process.platform + (osType.startsWith('MINGW32_NT') ? 'gnu' : '') + '-' + process.arch + '.tar.gz'
   var prebuild = path.join(cwd, 'prebuilds', file)
   exec('npm run prebuild-silent', { cwd: cwd }, function (error, stdout, stderr) {
     // XXX: latest cmake-js has a forgotten console.log(process.argv)
