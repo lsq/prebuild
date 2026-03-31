@@ -19,7 +19,7 @@ function prebuild (opts, target, runtime, callback) {
   }
 
   var buildLogMessage = 'Preparing to prebuild ' + pkg.name + '@' + pkg.version + ' for ' + runtime + ' ' + target + ' on ' + opts.platform + '-' + opts.arch + ' using ' + opts.backend
-  if (opts.libc && opts.libc.length > 0) buildLogMessage += 'using libc ' + opts.libc
+  if (opts.libc && opts.libc.length > 0) buildLogMessage += ' using libc ' + opts.libc
   buildLog(buildLogMessage)
 
   // --target can be target or abi

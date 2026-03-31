@@ -28,6 +28,9 @@ var rc = require('rc')('prebuild', {
   alias: {
     target: 't',
     runtime: 'r',
+    tagUv: 'tag-uv',
+    tagArmv: 'tag-armv',
+    tagLibc: 'tag-libc',
     help: 'h',
     arch: 'a',
     path: 'p',
