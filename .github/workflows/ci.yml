@@ -80,26 +80,8 @@ jobs:
       - name: Test
         if: matrix.arch != 'mingw'
         run: npm test
-      - name: Publish
-        if: ${{ startsWith(github.ref_name, 'v') && env.tagName != '' }}
-        shell: msys2 {0}
-        run: |
-          if git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+$";
-          then
-            echo "Publishing regular release"
-            npm publish --access public
-          elif git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+$";
-          then
-            echo "Publishing beta release"
-            npm publish --tag beta --access public
-          else
-            echo "Not a release, skipping publish"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Upload to Release
-        if: ${{ env.tagName != '' }}
+        if: ${{ startsWith(github.ref_name, 'v') && env.tagName != '' }}
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -108,3 +90,22 @@ jobs:
           name: ${{ env.tagName }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish
+        if: ${{ startsWith(github.ref_name, 'v') && env.tagName != '' }}
+        shell: msys2 {0}
+        run: |
+          if git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          then
+            echo "Publishing regular release"
+            npm publish *.tgz --access public
+          elif git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+$";
+          then
+            echo "Publishing beta release"
+            npm publish *.tgz --tag beta --access public
+          else
+            echo "Not a release, skipping publish"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
